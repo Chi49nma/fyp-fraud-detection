@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fraud Detection Result</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="background">
+  <div class="card">
+
+    <!-- HEADER -->
+    <div class="header">
+      <div class="logo">🛡️</div>
+      <h1>FRAUD DETECTION RESULT</h1>
+      <p>Three-Layer Intelligent Fraud Detection Report</p>
+    </div>
+
+    <!-- TRANSACTION SUMMARY -->
+    <div class="section-title">Transaction Summary</div>
+    <div class="result-card">
+
+      <div class="result-row">
+        <span>💰 Transaction Amount</span>
+        <strong>₦{{ "{:,.2f}".format(amount) }}</strong>
+      </div>
+
+      <div class="result-row">
+        <span>🏦 Bank</span>
+        <strong>{{ bank }}</strong>
+      </div>
+
+      <div class="result-row">
+        <span>📱 Channel</span>
+        <strong>{{ channel }}</strong>
+      </div>
+
+      <div class="result-row">
+        <span>🛒 Merchant Category</span>
+        <strong>{{ merchant }}</strong>
+      </div>
+
+      <div class="result-row">
+        <span>📍 Location</span>
+        <strong>{{ location }}</strong>
+      </div>
+
+      <div class="result-row">
+        <span>👤 Age Group</span>
+        <strong>{{ age_group }}</strong>
+      </div>
+
+      <div class="result-row">
+        <span>🕒 Transaction Time</span>
+        <strong>{{ transaction_time }}</strong>
+      </div>
+
+    </div>
+
+    <!-- AI FRAUD ANALYSIS -->
+    <div class="section-title">AI Fraud Analysis</div>
+    <div class="analysis-grid">
+
+      <!-- LAYER 2: Random Forest (runs first) -->
+      <div class="analysis-card">
+        <div class="analysis-icon">🤖</div>
+        <h3>Random Forest<br><small style="font-weight:400;font-size:12px;">Layer 2 — Primary Classifier</small></h3>
+        <p class="probability">{{ probability }}%</p>
+        <p>Fraud Probability</p>
+        {% if probability >= 50 %}
+          <p class="danger-text">⚠ Fraud Predicted</p>
+        {% else %}
+          <p class="success-text">✔ Legitimate Predicted</p>
+        {% endif %}
+      </div>
+
+      <!-- LAYER 3: Behavioural Analysis (confirms if RF says fraud) -->
+      <div class="analysis-card">
+        <div class="analysis-icon">🧠</div>
+        <h3>Behavioural Analysis<br><small style="font-weight:400;font-size:12px;">Layer 3 — Fraud Confirmation</small></h3>
+        {% if behaviour_flag %}
+          <p class="danger-text">⚠ High Behavioural Deviation</p>
+        {% else %}
+          <p class="success-text">✔ Normal Behaviour Pattern</p>
+        {% endif %}
+        <p>Behaviour Score: <strong>{{ behaviour_score }}</strong></p>
+        <p style="font-size:12px;color:#888;">
+          {% if probability >= 50 %}
+            Applied — RF predicted fraud; behavioural analysis used to confirm decision.
+          {% elif behaviour_flag %}
+            Computed but not deciding — RF predicted legitimate, so Layer 1 (rule filter) determined the final outcome.
+          {% else %}
+            Not triggered — RF predicted legitimate and behaviour was normal.
+          {% endif %}
+        </p>
+      </div>
+
+      <!-- LAYER 1: Rule-Based Filter (safety net if RF says legitimate) -->
+      <div class="analysis-card">
+        <div class="analysis-icon">🛡️</div>
+        <h3>Rule-Based Filter<br><small style="font-weight:400;font-size:12px;">Layer 1 — Safety Net</small></h3>
+        {% if rule_flag %}
+          <p class="danger-text">⚠ Suspicious Pattern Detected</p>
+        {% else %}
+          <p class="success-text">✔ No Suspicious Rule Triggered</p>
+        {% endif %}
+        <p style="font-size:12px;color:#888;">
+          {% if probability >= 50 %}
+            Not the deciding factor — RF already predicted fraud.
+          {% elif rule_flag %}
+            Applied and triggered — flagged this transaction as the safety net check.
+          {% else %}
+            Applied and passed — no suspicious rule patterns found.
+          {% endif %}
+        </p>
+      </div>
+
+    </div>
+
+    <!-- FINAL DECISION -->
+    <div class="section-title">Final Decision</div>
+    <div class="decision-card">
+
+      {% if decision == "REJECT" %}
+        <div class="decision reject">
+          <div class="decision-icon">🚫</div>
+          <h2>REJECT TRANSACTION</h2>
+          <p>
+            The Random Forest model predicted a high fraud probability
+            ({{ probability }}%), and the Behavioural Pattern Analysis
+            confirmed an unusual deviation from normal spending patterns
+            (score: {{ behaviour_score }}). Both signals align, indicating
+            a high-confidence fraud case. This transaction is rejected.
+          </p>
+        </div>
+
+      {% elif decision == "FLAG" %}
+        <div class="decision flag">
+          <div class="decision-icon">⚠️</div>
+          <h2>FLAG FOR INVESTIGATION</h2>
+          {% if probability >= 50 %}
+            <p>
+              The Random Forest model predicted fraud ({{ probability }}%
+              probability), but the Behavioural Pattern Analysis did not
+              confirm a significant deviation from the account's normal
+              behaviour pattern (score: {{ behaviour_score }}). The transaction
+              is flagged for manual review by a fraud analyst before a
+              final decision is made.
+            </p>
+          {% else %}
+            <p>
+              The Random Forest model classified this transaction as legitimate
+              ({{ probability }}% fraud probability), but the Rule-Based Filter
+              detected a suspicious pattern — the transaction channel and amount
+              ratio match known high-risk indicators. The transaction is flagged
+              for precautionary review before approval.
+            </p>
+          {% endif %}
+        </div>
+
+      {% else %}
+        <div class="decision approve">
+          <div class="decision-icon">✅</div>
+          <h2>APPROVE TRANSACTION</h2>
+          <p>
+            The Random Forest model classified this transaction as legitimate
+            ({{ probability }}% fraud probability), and the Rule-Based Filter
+            found no suspicious patterns. All three layers of the fraud
+            detection pipeline indicate this is a normal transaction.
+            It is approved for processing.
+          </p>
+        </div>
+      {% endif %}
+
+    </div>
+
+    <!-- BACK BUTTON -->
+    <div class="button-area">
+      <a href="/" class="back-btn">← Analyse Another Transaction</a>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <p>AI-Based Fraud Detection System</p>
+      <p>
+        Decision Logic: Random Forest (Primary) •
+        Behavioural Analysis (Confirmation) •
+        Rule-Based Filter (Safety Net)
+      </p>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

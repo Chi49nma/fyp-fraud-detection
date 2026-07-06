@@ -1,0 +1,170 @@
+==============================================================================
+AI-BASED FRAUD DETECTION SYSTEM - THREE-LAYER PIPELINE RESULTS
+==============================================================================
+
+--- STEP 0: Loading dataset ---
+Total transactions loaded: 43,000
+Fraud cases: 3,000  |  Legitimate cases: 40,000
+
+Training set: 34,400 transactions (80%)
+Testing set:  8,600 transactions (20%)
+
+==============================================================================
+LAYER 1: RULE-BASED ANOMALY FILTERING
+==============================================================================
+
+Rule applied (derived from exploratory analysis of the dataset):
+  Flag a transaction as suspicious if BOTH of the following hold:
+    (a) channel is one of the three highest-fraud-rate channels
+        (Web, Mobile, or POS), AND
+    (b) EITHER amount_vs_mean_ratio OR velocity_score is in the top 10%
+        of all observed values (i.e. unusually large relative to the
+        customer's normal spending pattern or transaction velocity).
+
+Thresholds learned from TRAINING set only (no leakage from test set):
+  amount_vs_mean_ratio 90th percentile: 2.3064
+  velocity_score 90th percentile:       4.5758
+
+Layer 1 flagged 864 of 8,600 test transactions as suspicious (10.0%).
+
+--- Layer 1 Standalone Performance (Rule-Based Filter Only) ---
+[[7196  804]
+ [ 540   60]]
+                precision    recall  f1-score   support
+
+Legitimate (0)      0.930     0.899     0.915      8000
+     Fraud (1)      0.069     0.100     0.082       600
+
+      accuracy                          0.844      8600
+     macro avg      0.500     0.500     0.498      8600
+  weighted avg      0.870     0.844     0.857      8600
+
+
+==============================================================================
+LAYER 2: MACHINE LEARNING CLASSIFICATION (RANDOM FOREST)
+==============================================================================
+
+Applying SMOTE (Synthetic Minority Over-sampling Technique) to balance the training dataset...
+Training data after SMOTE:
+is_fraud
+0    32000
+1    32000
+Name: count, dtype: int64
+
+Training Random Forest on 64,000 transactions (post-SMOTE), 25 features...
+Configuration: n_estimators=100, trained on the SMOTE-balanced training set (synthetic oversampling of the minority fraud class is the class-imbalance handling technique used for this model).
+Model training complete.
+
+--- Layer 2 Standalone Performance (Random Forest Only) ---
+[[7959   41]
+ [ 253  347]]
+                precision    recall  f1-score   support
+
+Legitimate (0)      0.969     0.995     0.982      8000
+     Fraud (1)      0.894     0.578     0.702       600
+
+      accuracy                          0.966      8600
+     macro avg      0.932     0.787     0.842      8600
+  weighted avg      0.964     0.966     0.962      8600
+
+Summary -> Accuracy: 0.9658 | Precision: 0.8943 | Recall: 0.5783 | F-Measure: 0.7024
+
+Top 10 most important features (Random Forest feature importance):
+amount                  0.1836
+amount_vs_mean_ratio    0.1002
+amount_sum_24h          0.0752
+location                0.0620
+merchant_risk_score     0.0512
+month                   0.0508
+velocity_score          0.0507
+is_peak_hour            0.0330
+channel                 0.0309
+amount_mean_total       0.0307
+dtype: float64
+
+==============================================================================
+LAYER 3: BEHAVIOURAL PATTERN ANALYSIS
+==============================================================================
+
+This layer evaluates contextual behavioural deviation using features that
+represent a transaction's divergence from the account holder's established
+pattern: amount_vs_mean_ratio (deviation from personal average spend),
+velocity_score (transaction frequency deviation), channel_diversity, and
+location_diversity (deviation from usual channel/location habits).
+
+A transaction is flagged as a BEHAVIOURAL DEVIATION if its combined,
+weighted behavioural-deviation score exceeds the 90th percentile observed
+in the training data.
+
+Behavioural deviation threshold (90th percentile of training scores): 0.4541
+
+Layer 3 flagged 855 of 8,600 test transactions as behaviourally deviant (9.9%).
+
+--- Layer 3 Standalone Performance (Behavioural Analysis Only) ---
+[[7198  802]
+ [ 547   53]]
+                precision    recall  f1-score   support
+
+Legitimate (0)      0.929     0.900     0.914      8000
+     Fraud (1)      0.062     0.088     0.073       600
+
+      accuracy                          0.843      8600
+     macro avg      0.496     0.494     0.494      8600
+  weighted avg      0.869     0.843     0.856      8600
+
+
+==============================================================================
+COMBINED THREE-LAYER PIPELINE DECISION LOGIC
+==============================================================================
+
+Final decision rule (matching Chapter 3 / Figure 3.1 flowchart):
+
+  Every transaction is independently scored by Layer 2 (Random Forest)
+  AND checked against Layer 1 (rule filter), regardless of order, since
+  in a real-time system both checks can run in parallel. Layer 3 acts as
+  a confirming/escalating signal rather than a second independent gate,
+  consistent with its role in Section 3.2.3 (distinguishing a borderline
+  ML flag from a confirmed high-risk case):
+
+    - If Layer 2 predicts fraud:
+        - If Layer 3 also confirms behavioural deviation -> REJECT
+        - Otherwise -> FLAG FOR INVESTIGATION
+    - If Layer 2 does NOT predict fraud:
+        - If Layer 1 (rule filter) independently flags it -> FLAG FOR
+          INVESTIGATION (a safety net for cases the ML model misses but
+          a simple rule still catches)
+        - Otherwise -> APPROVE
+
+Distribution of final pipeline decisions on the test set:
+final_decision
+APPROVE    7378
+FLAG       1204
+REJECT       18
+Name: count, dtype: int64
+
+--- COMBINED PIPELINE Performance (All Three Layers Together) ---
+[[7161  839]
+ [ 217  383]]
+                precision    recall  f1-score   support
+
+Legitimate (0)      0.971     0.895     0.931      8000
+     Fraud (1)      0.313     0.638     0.420       600
+
+      accuracy                          0.877      8600
+     macro avg      0.642     0.767     0.676      8600
+  weighted avg      0.925     0.877     0.896      8600
+
+Summary -> Accuracy: 0.8772 | Precision: 0.3134 | Recall: 0.6383 | F-Measure: 0.4204
+
+==============================================================================
+FINAL COMPARISON: ALL FOUR APPROACHES
+==============================================================================
+                             Accuracy  Precision  Recall  F-Measure
+Layer 1: Rule-Based Only       0.8437     0.0694  0.1000     0.0820
+Layer 2: Random Forest Only    0.9658     0.8943  0.5783     0.7024
+Layer 3: Behavioural Only      0.8431     0.0620  0.0883     0.0729
+Combined 3-Layer Pipeline      0.8772     0.3134  0.6383     0.4204
+
+==============================================================================
+END OF RESULTS
+==============================================================================

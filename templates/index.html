@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Fraud Detection System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="background">
+<div class="card">
+
+  <div class="header">
+    <div class="logo">🛡️</div>
+    <h1>AI-Based Fraud Detection System</h1>
+    <p>
+      Intelligent Three-Layer Fraud Detection using Random Forest Machine
+      Learning as the primary classifier, supported by Behavioural Pattern
+      Analysis and a Rule-Based Safety Net.
+    </p>
+  </div>
+
+  <form action="/predict" method="POST">
+
+    <div class="section-title">Transaction Details</div>
+
+    <div class="form-grid">
+
+      <div class="input-group">
+        <label>Transaction Amount (₦)</label>
+        <input type="number" name="amount" placeholder="25000" required>
+      </div>
+
+      <div class="input-group">
+        <label>Bank</label>
+        <select name="bank" required>
+          <option value="">Select Bank</option>
+          <option>Access</option>
+          <option>FCMB</option>
+          <option>Fidelity</option>
+          <option>FirstBank</option>
+          <option>GTBank</option>
+          <option>Sterling</option>
+          <option>UBA</option>
+          <option>Union</option>
+          <option>Wema</option>
+          <option>Zenith</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label>Transaction Channel</label>
+        <select name="channel" required>
+          <option value="">Select Channel</option>
+          <option>ATM</option>
+          <option>ECOM</option>
+          <option>IB</option>
+          <option>Mobile</option>
+          <option>POS</option>
+          <option>Web</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label>Merchant Category</label>
+        <select name="merchant_category" required>
+          <option value="">Select Merchant</option>
+          <option>ATM_Withdrawal</option>
+          <option>Airtime</option>
+          <option>Bill_Payment</option>
+          <option>Education</option>
+          <option>Electronics</option>
+          <option>Entertainment</option>
+          <option>Fashion</option>
+          <option>Fuel</option>
+          <option>Grocery</option>
+          <option>Medical</option>
+          <option>Restaurant</option>
+          <option>Retail</option>
+          <option>Transfer</option>
+          <option>Transport</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label>Location</label>
+        <select name="location" required>
+          <option value="">Select Location</option>
+          <option>Abuja</option>
+          <option>Lagos</option>
+          <option>Ogun</option>
+          <option>Other</option>
+          <option>Oyo</option>
+          <option>Rivers</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label>Age Group</label>
+        <select name="age_group" required>
+          <option value="">Select Age Group</option>
+          <option>&lt;20</option>
+          <option>20-29</option>
+          <option>30-39</option>
+          <option>40+</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label>Transaction Time</label>
+        <input type="time" name="transaction_time" required>
+      </div>
+
+    </div>
+
+    <div class="button-area">
+      <button type="submit">🛡️ Detect Fraud</button>
+    </div>
+
+  </form>
+
+  <div class="footer">
+    <p>AI-Based Fraud Detection System | Final Year Project</p>
+    <p>
+      Decision Logic: Random Forest (Primary) •
+      Behavioural Analysis (Confirmation) •
+      Rule-Based Filter (Safety Net)
+    </p>
+  </div>
+
+</div>
+</div>
+
+</body>
+</html>
